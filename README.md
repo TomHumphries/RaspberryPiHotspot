@@ -242,6 +242,10 @@ app.use((req, res, next) => {
     next();
 })
 
+app.get('/', (req, res, next) => {
+    res.send('Pi WiFi - Captive Portal');
+})
+
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`)
 })
@@ -291,3 +295,7 @@ It will start automatically on boot, but you can start it now with:
 ```
 sudo systemctl start piwifi
 ```
+
+When you connect to the WiFi you should be prompted to signin to the network (tested on Windows, Android, and iPhone). Otherwise, any time you try to connect to a http site, you should be redirected to the web server at the domain **pi.wifi**, a domain that doesn't exist on the "real" internet.
+
+If you are redirected to the site successfully, you should see the text "Pi WiFi - Captive Portal".
