@@ -1,0 +1,13 @@
+[Unit]
+Description=Pi WiFi Hotspot Service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/pi/Node/PiWiFi
+ExecStart=/usr/bin/nodejs /home/pi/Node/PiWiFi/app.js
+Restart=on-failure
+User=root
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
