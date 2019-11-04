@@ -1,4 +1,4 @@
-# RaspberryPiHotSpot
+# Raspberry Pi Wifi Hotspot with Captive Portal
 This turns a Raspberry Pi into a WiFi hotspot that is not connected to the internet, hosting a single website.
 
 When connecting to the Raspberry Pi it should redirect you to the website hosted on it.
@@ -6,7 +6,7 @@ When connecting to the Raspberry Pi it should redirect you to the website hosted
 This is done by mimicking a signin step, which opens a browser window on Windows, Android, and Apple devices when connecting to the WiFi.
 
 
-**This guide continues on from the steps in the guide "[Setting up a Raspberry Pi as a Wireless Access Point](https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md)" from the RaspberryPi.org website.**
+**This guide is an extension of the guide "[Setting up a Raspberry Pi as a Wireless Access Point](https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md)" from the RaspberryPi.org website.**
 
 
 # Setting up a Raspberry Pi as an open Wireless Access Point with a Captive Portal
@@ -19,8 +19,6 @@ Before proceeding, please ensure your Raspberry Pi is [up to date](../../raspbia
 The Raspberry Pi can be used as a wireless access point, running a standalone network. This can be done using the inbuilt wireless features of the Raspberry Pi 3 or Raspberry Pi Zero W, or by using a suitable USB wireless dongle that supports access points.
 
 Note that this documentation was tested on a Raspberry Pi Zero W, and it is possible that some USB dongles may need slight changes to their settings. If you are having trouble with a USB wireless dongle, please check the forums.
-
-To add a Raspberry Pi-based access point to an existing network, see [this section](#internet-sharing).
 
 In order to work as an access point, the Raspberry Pi will need to have access point software installed, along with DHCP server software to provide connecting devices with a network address.
 
@@ -79,7 +77,7 @@ dhcp-range=192.168.4.2,192.168.4.255,255.255.255.0,15m
 address=/#/192.168.4.1 # Redirect all domains (the #) to the address 192.168.4.1 (the server on the (Pi)
 ```
 
-So for `wlan0`, we are going to provide IP addresses between 192.168.4.2 and 192.168.4.20, with a lease time of 24 hours. If you are providing DHCP services for other network devices (e.g. eth0), you could add more sections with the appropriate interface header, with the range of addresses you intend to provide to that interface.
+So for `wlan0`, we are going to provide IP addresses between 192.168.4.2 and 192.168.4.20, with a lease time of 15 minutes. If you are providing DHCP services for other network devices (e.g. eth0), you could add more sections with the appropriate interface header, with the range of addresses you intend to provide to that interface. We are also redirecting all domains to the ip address 192.168.4.1. Later on we're going to redirect all traffic destined for 192.168.4.1 to the IP and port where we're hosting the server - 192.168.4.1:3000.
 
 There are many more options for dnsmasq; see the [dnsmasq documentation](http://www.thekelleys.org.uk/dnsmasq/doc.html) for more details.
 
@@ -97,7 +95,7 @@ You need to edit the hostapd configuration file, located at /etc/hostapd/hostapd
 sudo nano /etc/hostapd/hostapd.conf
 ```
 
-Add the information below to the configuration file. This configuration assumes we are using channel 7, with a network name of NameOfNetwork, and a password AardvarkBadgerHedgehog. Note that the name and password should **not** have quotes around them. The passphrase should be between 8 and 64 characters in length.
+Add the information below to the configuration file. This configuration assumes we are using channel 7, with a network name of Pi WiFi, and no password. This means anyone can connect to the network. The original Raspberry Pi guide has configuration options for a passworded WiFi.
 
 To use the 5 GHz band, you can change the operations mode from hw_mode=g to hw_mode=a. Possible values for hw_mode are:
  - a = IEEE 802.11a (5 GHz)
@@ -110,6 +108,7 @@ interface=wlan0
 driver=nl80211
 ssid=Pi WiFi
 channel=7
+hw_mode=g
 ```
 
 We now need to tell the system where to find this configuration file.
@@ -157,10 +156,10 @@ sudo iptables -t nat -A  POSTROUTING -o eth0 -j MASQUERADE
 
 (more information about masquerade in iptables https://askubuntu.com/a/466451)
 
-Add redirect for all inbound http web traffic (port 80) to our Node.js server on port 3000.
+Add redirect for all inbound http traffic for 192.168.4.1 (which we defined earlier in dnsmasq.conf) to our Node.js server on port 3000 (192.168.4.1:3000).
 
 ```
-sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.4.1:3000
+sudo iptables -t nat -I PREROUTING -d 192.168.4.1 -p tcp --dport 80 -j DNAT --to-destination 192.168.4.1:3000
 ```
 
 Save the iptables rules.
